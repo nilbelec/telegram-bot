@@ -15,14 +15,16 @@ from StringIO import StringIO
 import requests
 import sys
 
+import config
+
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-CHAT_ID = 00000 # your Telegram User ChatId with the bot
-TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
-DOWN_TORRENT = '/where/to/store/downloaded/torrents/'
-URL_DOMAIN = 'https://descargas2020.com'
-DOWNLOAD_TORRENT_START = '//descargas2020.com/descargar-torrent/'
+CHAT_ID = config.CONFIG["botChatId"]
+BOT_TOKEN = config.CONFIG["botToken"]
+TORRENTS_FOLDER = config.CONFIG["storage"]
+BASE_URL = config.CONFIG["baseURL"]
+TORRENT_URL_PATTERN = config.CONFIG["torrentURLPattern"]
 
 cached_movies = {}
 
@@ -74,10 +76,10 @@ def download_callback(bot, update):
         return
     html = get_tree(movie["link"])
     script = html.xpath("//a[@class='btn-torrent']/following-sibling::node()[2]/text()")[0]
-    idx = script.find("\"" + DOWNLOAD_TORRENT_START) + 1
+    idx = script.find("\"" + TORRENT_URL_PATTERN) + 1
     end = script.find("\"", idx)
     torrent = 'http:' + script[idx:end]
-    wget.download(torrent, out=DOWN_TORRENT + str(key) + '.torrent')
+    wget.download(torrent, out=TORRENTS_FOLDER + str(key) + '.torrent')
     bot.answerCallbackQuery(callback_query_id=update.callback_query.id, text='Fichero torrent descargado!')
 
     message_id = update.callback_query.message.message_id
@@ -227,7 +229,7 @@ def get_tree(url):
 
 
 def update_latest_movies(page):
-    html = get_tree(URL_DOMAIN + '/peliculas-hd/pg/' + str(page))
+    html = get_tree(BASE_URL + '/peliculas-hd/pg/' + str(page))
     anchors = html.xpath("//ul[@class='pelilist']/li[contains(.,'MicroHD')]/a")
 
     latest_movies = []
@@ -243,9 +245,9 @@ def update_latest_movies(page):
 
 
 def get_last_page():
-    html = get_tree(URL_DOMAIN + '/peliculas-hd/pg/1')
+    html = get_tree(BASE_URL + '/peliculas-hd/pg/1')
     url = html.xpath("//ul[@class='pagination']/li/a[contains(.,'Last')]/@href")[-1]
-    last_page = url.replace(URL_DOMAIN + '/peliculas-hd/pg/', '')
+    last_page = url.replace(BASE_URL + '/peliculas-hd/pg/', '')
     return int(last_page)
 
 
@@ -272,7 +274,7 @@ def list_movies_callback(bot, update):
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logging.info("Levantando Raspberry Pi Bot...")
 
-updater = Updater(token=TOKEN)
+updater = Updater(token=BOT_TOKEN)
 dispatcher = updater.dispatcher
 
 download_handler = CallbackQueryHandler(download_callback, pattern='down.*')
