@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 
 import hashlib
@@ -11,14 +11,12 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, TelegramError
 from telegram.ext import Updater, CallbackQueryHandler
 from telegram.ext import CommandHandler
 from lxml import etree
-from StringIO import StringIO
+from io import StringIO
 import requests
 import sys
 
 import config
 
-reload(sys)
-sys.setdefaultencoding('utf8')
 
 CHAT_ID = config.CONFIG["botChatId"]
 BOT_TOKEN = config.CONFIG["botToken"]
@@ -106,7 +104,7 @@ def get_movie_detail(movie):
     size_nodes = html.xpath("//div[@class='entry-left']/span[@class='imp']/text()")
     return {
         "type": type_nodes[0].strip() if len(type_nodes) > 0 else "-",
-        "sinopsis": sinopsis_nodes[0].strip() if len(sinopsis_nodes) > 1 else "-",
+        "sinopsis": '.'.join(sinopsis_nodes) if len(sinopsis_nodes) > 1 else "-",
         "size": size_nodes[0].strip() if len(size_nodes) > 1 else "-"
     }
 
@@ -225,7 +223,7 @@ def prepare_markup(movies, page, last_page):
 def get_tree(url):
     parser = etree.HTMLParser()
     page = requests.get(url)
-    return etree.parse(StringIO(page.content), parser)
+    return etree.parse(StringIO(page.text), parser)
 
 
 def update_latest_movies(page):
@@ -236,7 +234,7 @@ def update_latest_movies(page):
     for anchor in anchors:
         name = anchor.xpath("h2/text()")[0].strip()
         link = anchor.xpath("@href")[0]
-        movie_id = int(hashlib.md5(link).hexdigest(), 16)
+        movie_id = int(hashlib.md5(link.encode('utf-8')).hexdigest(), 16)
         movie = {"name": name, "link": link, "id": movie_id, "page": page}
         if movie_id not in cached_movies:
             cached_movies[movie_id] = movie
@@ -246,7 +244,7 @@ def update_latest_movies(page):
 
 def get_last_page():
     html = get_tree(BASE_URL + '/peliculas-hd/pg/1')
-    url = html.xpath("//ul[@class='pagination']/li/a[contains(.,'Last')]/@href")[-1]
+    url = html.xpath("//ul[@class='pagination']/li[last()]/a/@href")[-1]
     last_page = url.replace(BASE_URL + '/peliculas-hd/pg/', '')
     return int(last_page)
 

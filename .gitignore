@@ -1,3 +1,5 @@
 .idea
 venv
 config.py
+*.pyc
+.vscode
