@@ -6,6 +6,7 @@ import hashlib
 import math
 import wget
 import logging
+import shutil
 
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, TelegramError
 from telegram.ext import Updater, CallbackQueryHandler
@@ -73,13 +74,19 @@ def download_callback(bot, update):
         bot.send_message(chat_id=chat_id, text="Ups. No se encuentra la peli!")
         return
     html = get_tree(movie["link"])
-    script = html.xpath("//a[@class='btn-torrent']/following-sibling::node()[2]/text()")[0]
+    script = html.xpath("//a[@class='btn-torrent']/following-sibling::script/text()")[0]
     idx = script.find("\"" + TORRENT_URL_PATTERN) + 1
     end = script.find("\"", idx)
-    torrent = 'http:' + script[idx:end]
-    wget.download(torrent, out=TORRENTS_FOLDER + str(key) + '.torrent')
-    bot.answerCallbackQuery(callback_query_id=update.callback_query.id, text='Fichero torrent descargado!')
-
+    torrent = 'https:' + script[idx:end]
+    out = TORRENTS_FOLDER + str(key) + '.torrent'
+    r = requests.get(torrent, stream=True, headers={'User-agent': 'Mozilla/5.0'})
+    if r.status_code == 200:
+        with open(out, 'wb') as f:
+            r.raw.decode_content = True
+            shutil.copyfileobj(r.raw, f)
+            bot.answerCallbackQuery(callback_query_id=update.callback_query.id, text='Fichero torrent descargado!')
+    else:
+        bot.answerCallbackQuery(callback_query_id=update.callback_query.id, text='Ups! No se ha podido descargar el torrent...')
     message_id = update.callback_query.message.message_id
     movie_page = movie["page"]
     movie_name = movie["name"]

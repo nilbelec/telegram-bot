@@ -2,6 +2,6 @@ CONFIG = {
     'botChatId': 000000, # Your Telegram User ChatID with the bot
     'botToken': 'YOUR_TELEGRAM_BOT_TOKEN',
     'storage': '/where/to/store/downloaded/torrents/',
-    'baseURL': 'https://descargas2020.com',
-    'torrentURLPattern': '//descargas2020.com/descargar-torrent/',
+    'baseURL': 'https://descargas2020.org',
+    'torrentURLPattern': '//descargas2020.org/descargar-torrent/',
 }
