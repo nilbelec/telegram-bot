@@ -1,4 +1,4 @@
 wget==3.2
 python-telegram-bot==11.1.0
 lxml==4.3.1
-requests==2.21.0
+requests==2.31.0
